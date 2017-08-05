@@ -173,7 +173,7 @@ func handleSession(newChannel ssh.NewChannel) error {
 	if err == nil || err == io.EOF {
 		// this makes ssh client exit with 0 status on client-initiated
 		// disconnect (eg. ^D)
-		channel.SendRequest("exit-status", false, ssh.Marshal(exitStatusMsg{0}))
+		channel.SendRequest("exit-status", false, ssh.Marshal(struct{ Status uint32 }{0}))
 	}
 	return err
 }
@@ -246,8 +246,4 @@ func loadDestinations(name string) ([]string, error) {
 		out = append(out, scanner.Text())
 	}
 	return out, scanner.Err()
-}
-
-type exitStatusMsg struct {
-	Status uint32
 }
