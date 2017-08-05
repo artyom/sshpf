@@ -24,6 +24,7 @@ func main() {
 		AuthKeysFile: "authorized_keys",
 		HostKeyFile:  "id_rsa",
 		Addr:         "localhost:2022",
+		Timeout:      3 * time.Minute,
 	}
 	autoflags.Parse(&args)
 	if err := run(args); err != nil {
@@ -32,10 +33,11 @@ func main() {
 }
 
 type runArgs struct {
-	AuthKeysFile string `flag:"auth,path to authorized_keys file"`
-	HostKeyFile  string `flag:"hostKey,path to private host key file"`
-	Addr         string `flag:"addr,address to listen"`
-	Destinations string `flag:"allowed,file with list of allowed to connect host:port pairs"`
+	AuthKeysFile string        `flag:"auth,path to authorized_keys file"`
+	HostKeyFile  string        `flag:"hostKey,path to private host key file"`
+	Addr         string        `flag:"addr,address to listen"`
+	Destinations string        `flag:"allowed,file with list of allowed to connect host:port pairs"`
+	Timeout      time.Duration `flag:"timeout,IO timeout on client connections"`
 }
 
 func run(args runArgs) error {
@@ -70,8 +72,36 @@ func run(args runArgs) error {
 		if err != nil {
 			return err
 		}
+		tc := conn.(*net.TCPConn)
+		tc.SetKeepAlive(true)
+		tc.SetKeepAlivePeriod(3 * time.Minute)
+		if args.Timeout > 0 {
+			conn = timeoutConn{tc, args.Timeout}
+		}
 		go handleConn(conn, config, destinations...)
 	}
+}
+
+// timeoutConn extends deadline after successful read or write operations
+type timeoutConn struct {
+	*net.TCPConn
+	d time.Duration
+}
+
+func (c timeoutConn) Read(b []byte) (int, error) {
+	n, err := c.TCPConn.Read(b)
+	if err == nil {
+		_ = c.TCPConn.SetDeadline(time.Now().Add(c.d))
+	}
+	return n, err
+}
+
+func (c timeoutConn) Write(b []byte) (int, error) {
+	n, err := c.TCPConn.Write(b)
+	if err == nil {
+		_ = c.TCPConn.SetDeadline(time.Now().Add(c.d))
+	}
+	return n, err
 }
 
 func handleConn(nConn net.Conn, config *ssh.ServerConfig, allowedDestinations ...string) error {
@@ -115,6 +145,8 @@ dial:
 		return newChannel.Reject(ssh.ConnectionFailed, "connection failed")
 	}
 	defer rconn.Close()
+	rconn.(*net.TCPConn).SetKeepAlive(true)
+	rconn.(*net.TCPConn).SetKeepAlivePeriod(3 * time.Minute)
 	channel, requests, err := newChannel.Accept()
 	if err != nil {
 		return err
