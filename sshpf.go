@@ -217,18 +217,12 @@ func authChecker(name string) (func(conn ssh.ConnMetadata, key ssh.PublicKey) (*
 
 func decodeHostPortPayload(b []byte) (host string, port int, err error) {
 	// https://tools.ietf.org/html/rfc4254#section-7.2
-	if b == nil || len(b) < 4 {
-		err = errors.New("invalid payload size")
-		return
-	}
-	slen := int(b[3])
-	if len(b) < 4+slen+2+2 {
-		err = errors.New("invalid payload size")
-		return
-	}
-	host = string(b[4 : 4+slen])
-	port = int(uint32(b[4+slen+2])<<8 + uint32(b[4+slen+2+1]))
-	return host, port, nil
+	msg := struct {
+		Host string
+		Port uint32
+		Data []byte `ssh:"rest"`
+	}{}
+	return msg.Host, int(msg.Port), ssh.Unmarshal(b, &msg)
 }
 
 func loadDestinations(name string) ([]string, error) {
