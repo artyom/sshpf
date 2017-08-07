@@ -128,6 +128,7 @@ func handleConn(nConn net.Conn, config *ssh.ServerConfig, allowedDestinations ..
 func handleDial(newChannel ssh.NewChannel, allowedDestinations ...string) error {
 	host, port, err := decodeHostPortPayload(newChannel.ExtraData())
 	if err != nil {
+		newChannel.Reject(ssh.ConnectionFailed, "bad payload")
 		return err
 	}
 	addr := net.JoinHostPort(host, strconv.Itoa(port))
