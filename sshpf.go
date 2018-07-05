@@ -154,6 +154,7 @@ dial:
 	}
 	defer channel.Close()
 	go ssh.DiscardRequests(requests)
+	go sendKeepalives(channel, 90*time.Second)
 	go io.Copy(channel, rconn)
 	_, err = io.Copy(rconn, channel)
 	return err
@@ -241,4 +242,14 @@ func loadDestinations(name string) ([]string, error) {
 		out = append(out, scanner.Text())
 	}
 	return out, scanner.Err()
+}
+
+func sendKeepalives(channel ssh.Channel, d time.Duration) {
+	ticker := time.NewTicker(d)
+	defer ticker.Stop()
+	for range ticker.C {
+		if _, err := channel.SendRequest("keepalive@openssh.com", true, nil); err != nil {
+			return
+		}
+	}
 }
