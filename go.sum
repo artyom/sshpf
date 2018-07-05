@@ -1,0 +1,4 @@
+github.com/artyom/autoflags v1.1.0 h1:Cz3qb/qSkhmt/Zgsu3D/HwMJtKYUSV5kctI6O9bekv4=
+github.com/artyom/autoflags v1.1.0/go.mod h1:Th9KgAVvFcYp7t8b//Pu21xHjExLpzr4SXCbwVbHL7Y=
+golang.org/x/crypto v0.0.0-20180531191117-5ba7f6308246 h1:MZnJRoCTAuixTXohPACCXwD9zfTy41GBwmbTYq+ebCQ=
+golang.org/x/crypto v0.0.0-20180531191117-5ba7f6308246/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
