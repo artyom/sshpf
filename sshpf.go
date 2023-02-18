@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -171,7 +170,7 @@ func handleSession(newChannel ssh.NewChannel) error {
 			req.Reply(req.Type == "shell", nil)
 		}
 	}(requests)
-	_, err = io.Copy(ioutil.Discard, channel)
+	_, err = io.Copy(io.Discard, channel)
 	if err == nil || err == io.EOF {
 		// this makes ssh client exit with 0 status on client-initiated
 		// disconnect (eg. ^D)
@@ -181,7 +180,7 @@ func handleSession(newChannel ssh.NewChannel) error {
 }
 
 func loadHostKey(name string) (ssh.Signer, error) {
-	privateBytes, err := ioutil.ReadFile(name)
+	privateBytes, err := os.ReadFile(name)
 	if err != nil {
 		return nil, err
 	}
